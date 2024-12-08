@@ -1,20 +1,76 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <source git directory> <destination file>"
+show_help() {
+    echo "Usage: merge-files [--source <dir>] [--destination <file>] [--paths-file <file>]"
+    echo
+    echo "    -s, --source        Source Git directory"
+    echo "    -d, --destination   Destination file"
+    echo "    -p, --paths-file    A file containing a list of files to merge (optional)"
+    echo "    -h, --help          Show this help message"
+    echo
+    echo "Examples:"
+    echo "  merge-files --source . --destination merged.txt"
+    echo "  merge-files -s . -d merged.txt -p files_to_merge.txt"
+}
+
+src_dir=""
+dest_file=""
+paths_file=""
+
+# Parse Arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -s|--source)
+            src_dir="$2"
+            shift 2
+            ;;
+        -d|--destination)
+            dest_file="$2"
+            shift 2
+            ;;
+        -p|--paths-file)
+            paths_file="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $key"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "$src_dir" ] || [ -z "$dest_file" ]; then
+    echo "Error: --source and --destination are required."
+    show_help
     exit 1
 fi
 
-src_dir="$1"
-dest_file="$2"
-
 cd "$src_dir"
 
+# Determine which files to merge
 if [ -f .mergeignore ]; then
-    files=$(git ls-files --cached --others --exclude-standard --exclude-from=.mergeignore)
+    base_files=$(git ls-files --cached --others --exclude-standard --exclude-from=.mergeignore)
 else
-    files=$(git ls-files --cached --others --exclude-standard)
+    base_files=$(git ls-files --cached --others --exclude-standard)
+fi
+
+if [ -n "$paths_file" ]; then
+    if [ ! -f "$paths_file" ]; then
+        echo "Paths file '$paths_file' does not exist."
+        exit 1
+    fi
+    # Filter base_files to only include those listed in paths_file
+    # Using grep -Fxf to match lines exactly and handle special characters.
+    files=$(printf "%s\n" $base_files | grep -Fxf "$paths_file" || true)
+else
+    files="$base_files"
 fi
 
 > "$dest_file"
@@ -27,4 +83,4 @@ for f in $files; do
     fi
 done
 
-echo "All non-ignored files from '$src_dir' have been merged into '$dest_file'." 
+echo "All requested files from '$src_dir' have been merged into '$dest_file'." 

@@ -2,4 +2,5 @@
 *.swp
 *~
 .idea/
-.vscode/ 
+.vscode/
+pr_descriptions/
