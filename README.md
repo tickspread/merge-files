@@ -4,6 +4,13 @@ A Bash utility script that merges all non-ignored files from a Git repository in
 
 ## Installation
 
+Quick install (one-liner):
+```bash
+cd ~ && git clone https://github.com/tickspread/merge-files.git && cd merge-files && ./install.sh && source ~/.bashrc
+```
+
+Or step by step:
+
 1. Clone this repository:
    ```bash
    git clone git@github.com:tickspread/merge-files.git
