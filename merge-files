@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <source git directory> <destination file>"
+    exit 1
+fi
+
+src_dir="$1"
+dest_file="$2"
+
+cd "$src_dir"
+
+if [ -f .mergeignore ]; then
+    files=$(git ls-files --cached --others --exclude-standard --exclude-from=.mergeignore)
+else
+    files=$(git ls-files --cached --others --exclude-standard)
+fi
+
+> "$dest_file"
+
+for f in $files; do
+    if [ -f "$f" ]; then
+        echo "### $f ###" >> "$dest_file"
+        cat "$f" >> "$dest_file"
+        echo >> "$dest_file"
+    fi
+done
+
+echo "All non-ignored files from '$src_dir' have been merged into '$dest_file'." 
